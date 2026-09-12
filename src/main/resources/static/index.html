@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium REST Calculator</title>
+    <!-- Google Fonts & FontAwesome for Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Background Glowing Orbs */
+        body::before, body::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #6366f1, #a855f7);
+            filter: blur(80px);
+            z-index: 0;
+            opacity: 0.4;
+        }
+        body::before { top: 10%; left: 15%; animation: float 6s ease-in-out infinite; }
+        body::after { bottom: 10%; right: 15%; animation: float 8s ease-in-out infinite alternate; }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(20px); }
+        }
+
+        /* Glassmorphism Container */
+        .calculator-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 35px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s ease;
+        }
+
+        .calculator-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Error Shake Animation */
+        .shake {
+            animation: shake 0.3s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h2 {
+            color: #fff;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: #818cf8;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+        }
+
+        select.input-field {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 18px;
+        }
+
+        select.input-field option {
+            background: #1e1b4b;
+            color: #fff;
+        }
+
+        .btn-calculate {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-calculate:hover {
+            opacity: 0.95;
+            transform: scale(0.99);
+            box-shadow: 0 4px 25px rgba(124, 58, 237, 0.5);
+        }
+
+        /* Error Message Box */
+        .result-box {
+            margin-top: 25px;
+            padding: 18px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px dashed rgba(239, 68, 68, 0.4);
+            border-radius: 12px;
+            text-align: center;
+            display: none;
+            color: #f87171;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.15);
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        /* Custom Popup Modal for Success */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .popup-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .popup-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            padding: 40px 30px;
+            border-radius: 24px;
+            text-align: center;
+            max-width: 360px;
+            width: 90%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            transform: scale(0.7);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .popup-overlay.active .popup-box {
+            transform: scale(1);
+        }
+
+        .popup-icon {
+            width: 70px;
+            height: 70px;
+            background: rgba(52, 211, 153, 0.15);
+            border: 2px solid #34d399;
+            color: #34d399;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
+        }
+
+        .popup-title {
+            color: #fff;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .popup-msg {
+            color: #cbd5e1;
+            font-size: 15px;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .btn-close {
+            padding: 12px 30px;
+            background: #34d399;
+            border: none;
+            border-radius: 12px;
+            color: #0f172a;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 5px 15px rgba(52, 211, 153, 0.3);
+        }
+
+        .btn-close:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(52, 211, 153, 0.5);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator-card" id="calculatorCard">
+        <!-- Changed Name and Icon here -->
+        <div class="header">
+            <h2><i class="fa-solid fa-calculator" style="color: #818cf8; margin-right: 8px;"></i>Smart Calculator</h2>
+            <p>Spring Boot REST API Integration Challenge</p>
+        </div>
+
+        <div class="input-group">
+            <label>First Number (Num 1)</label>
+            <input type="number" id="num1" class="input-field" placeholder="e.g. 100" autocomplete="off">
+        </div>
+
+        <div class="input-group">
+            <label>Second Number (Num 2)</label>
+            <input type="number" id="num2" class="input-field" placeholder="e.g. 200" autocomplete="off">
+        </div>
+
+        <div class="input-group">
+            <label>Select Operation</label>
+            <select id="operation" class="input-field">
+                <option value="add">➕ Addition (Add)</option>
+                <option value="subs">➖ Subtraction (Subs)</option>
+                <option value="multiply">✖️ Multiplication (Multiply)</option>
+                <option value="divide">➗ Division (Divide)</option>
+            </select>
+        </div>
+
+        <button class="btn-calculate" onclick="performCalculation()">
+            <span>Execute Request</span>
+            <i class="fa-solid fa-bolt"></i>
+        </button>
+
+        <!-- Dynamic Error Box -->
+        <div id="resultBox" class="result-box">
+            <p id="resultText"></p>
+        </div>
+    </div>
+
+    <!-- Success Popup Modal -->
+    <div class="popup-overlay" id="popupOverlay">
+        <div class="popup-box">
+            <div class="popup-icon">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <div class="popup-title">Execution Success</div>
+            <div class="popup-msg" id="popupMessage"></div>
+            <button class="btn-close" onclick="closePopup()">Awesome!</button>
+        </div>
+    </div>
+
+    <script>
+        function triggerConfetti() {
+            var duration = 1.5 * 1000;
+            var end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0, y: 0.8 },
+                    colors: ['#a855f7', '#6366f1', '#34d399']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1, y: 0.8 },
+                    colors: ['#a855f7', '#6366f1', '#34d399']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        async function performCalculation() {
+            const num1 = document.getElementById('num1').value;
+            const num2 = document.getElementById('num2').value;
+            const operation = document.getElementById('operation').value;
+            
+            const resultBox = document.getElementById('resultBox');
+            const resultText = document.getElementById('resultText');
+            const card = document.getElementById('calculatorCard');
+            const popup = document.getElementById('popupOverlay');
+            const popupMsg = document.getElementById('popupMessage');
+
+            resultBox.style.display = "none";
+            card.classList.remove('shake');
+
+            if(!num1 || !num2) {
+                setTimeout(() => card.classList.add('shake'), 10);
+                resultBox.style.display = "block";
+                resultText.innerText = "⚠️ Please fill both number fields!";
+                return;
+            }
+
+            if (operation === "divide" && parseFloat(num2) === 0) {
+                setTimeout(() => card.classList.add('shake'), 10);
+                resultBox.style.display = "block";
+                resultText.innerText = "⚠️ Error: Cannot divide by zero!";
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:8080/api/calculate?num1=${num1}&num2=${num2}&operation=${operation}`);
+                const data = await response.text();
+
+                if (data.toLowerCase().includes('error') || data.toLowerCase().includes('invalid')) {
+                    setTimeout(() => card.classList.add('shake'), 10);
+                    resultBox.style.display = "block";
+                    resultText.innerText = data;
+                } else {
+                    popupMsg.innerText = data;
+                    popup.classList.add('active');
+                    triggerConfetti();
+                }
+
+            } catch (error) {
+                resultBox.style.display = "block";
+                resultText.innerText = "❌ Connection failed! Is Spring Boot running?";
+            }
+        }
+
+        function closePopup() {
+            document.getElementById('popupOverlay').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
